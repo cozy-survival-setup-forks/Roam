@@ -137,11 +137,15 @@ public final class RtpService {
     }
 
     private CompletableFuture<Optional<LocationFinder.Found>> search(Settings settings) {
-        if (!settings.followsPlayer()) {
-            Location cached = plugin.cache().poll(settings);
-            if (cached != null) return CompletableFuture.completedFuture(Optional.of(new LocationFinder.Found(cached, 0)));
-        }
-        return plugin.finder().find(settings, () -> false);
+        if (settings.followsPlayer()) return plugin.finder().find(settings, () -> false);
+
+        // A spot that was found in advance, or a fresh search if there is none.
+        return plugin.cache().pollAsync(settings).thenCompose(ready -> {
+            if (ready.isPresent()) {
+                return CompletableFuture.completedFuture(Optional.of(new LocationFinder.Found(ready.get(), 0)));
+            }
+            return plugin.finder().find(settings, () -> false);
+        });
     }
 
     private boolean canUseWorld(Player player, String world) {

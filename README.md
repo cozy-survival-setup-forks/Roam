@@ -23,6 +23,12 @@ commands. No JakesRTP code is used, it has no license.
 - Random teleport for first joins and respawns, commands to run afterwards, PlaceholderAPI values.
 - `/rtp info` shows exactly what the settings work out to and tries a search.
 
+## Speed
+
+- Chunks are loaded on Paper's worker threads, never by freezing the main thread.
+- Ready spots are found in the background. When a player teleports, the spot's chunk is loaded from disk (it was generated already) and checked again, so `/rtp` takes a fraction of a second.
+- Measured on a real 1.21.11 server with a real client: a teleport to a ready spot took about 100-200 ms, and the player's ping stayed at 1-3 ms during every teleport. When the destination has never been visited, the server still has to generate the chunks around the player, which is the same for every plugin.
+
 ## Commands and permissions
 
 | Command | What it does | Permission |

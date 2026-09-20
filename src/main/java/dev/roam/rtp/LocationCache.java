@@ -12,6 +12,8 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Keeps a few safe spots ready for every set of settings in use, found in the background, so
@@ -63,15 +65,26 @@ public final class LocationCache {
         entries.putIfAbsent(settings.cacheKey(), new Entry(settings));
     }
 
-    /** A ready spot for these settings, or null. */
-    public @Nullable Location poll(Settings settings) {
+    /**
+     * A ready spot for these settings. The chunk is loaded first, it may have unloaded since the spot was
+     * found (loading it is quick, it was already generated), and the spot is checked again.
+     */
+    public CompletableFuture<Optional<Location>> pollAsync(Settings settings) {
         Entry entry = entries.get(settings.cacheKey());
-        if (entry == null) return null;
-        while (!entry.spots.isEmpty()) {
-            Location spot = entry.spots.poll();
-            if (plugin.finder().stillSafe(settings, spot)) return spot;
-        }
-        return null;
+        Location spot = entry == null ? null : entry.spots.poll();
+        if (spot == null) return CompletableFuture.completedFuture(Optional.empty());
+
+        CompletableFuture<Optional<Location>> result = new CompletableFuture<>();
+        spot.getWorld().getChunkAtAsync(spot.getBlockX() >> 4, spot.getBlockZ() >> 4, true).whenComplete((chunk, error) ->
+                Bukkit.getScheduler().runTask(plugin, () -> {
+                    if (error == null && plugin.finder().stillSafe(settings, spot)) {
+                        result.complete(Optional.of(spot));
+                    } else {
+                        // This one is no good, try the next ready spot.
+                        pollAsync(settings).thenAccept(result::complete);
+                    }
+                }));
+        return result;
     }
 
     public int size(Settings settings) {
