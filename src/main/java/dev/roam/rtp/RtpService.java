@@ -126,7 +126,7 @@ public final class RtpService {
         CompletableFuture<Optional<LocationFinder.Found>> search = search(settings);
         int delay = skipDelay ? 0 : settings.delaySeconds();
         if (delay <= 0) {
-            search.thenAccept(found -> finish(player, settings, found, cost, !skipCooldown));
+            search.whenComplete((found, error) -> finish(player, settings, error != null ? Optional.empty() : found, cost, !skipCooldown));
             return;
         }
 
@@ -178,7 +178,7 @@ public final class RtpService {
         if (session.ticks >= delaySeconds * 20) {
             end(session);
             if (!session.search.isDone()) plugin.messages().send(player, "still-searching");
-            session.search.thenAccept(found -> finish(player, session.settings, found, cost, setCooldown));
+            session.search.whenComplete((found, error) -> finish(player, session.settings, error != null ? Optional.empty() : found, cost, setCooldown));
         }
     }
 
@@ -211,7 +211,17 @@ public final class RtpService {
 
     // ---- landing ----
 
+    /** Lands the player. Whatever goes wrong, the player must not stay stuck as "already teleporting". */
     private void finish(Player player, Settings settings, Optional<LocationFinder.Found> found, double cost, boolean setCooldown) {
+        try {
+            land(player, settings, found, cost, setCooldown);
+        } catch (Throwable problem) {
+            busy.remove(player.getUniqueId());
+            plugin.getLogger().warning("A random teleport for " + player.getName() + " failed: " + problem);
+        }
+    }
+
+    private void land(Player player, Settings settings, Optional<LocationFinder.Found> found, double cost, boolean setCooldown) {
         UUID id = player.getUniqueId();
         var messages = plugin.messages();
 
@@ -251,6 +261,7 @@ public final class RtpService {
             charged = true;
         }
 
+        if (player.isInsideVehicle()) player.leaveVehicle();
         Location from = player.getLocation();
         boolean refund = charged;
         player.teleportAsync(target).whenComplete((success, error) -> Bukkit.getScheduler().runTask(plugin, () -> {
@@ -260,7 +271,11 @@ public final class RtpService {
                 busy.remove(id);
                 return;
             }
-            arrived(player, settings, from, target, cost, refund, setCooldown);
+            try {
+                arrived(player, settings, from, target, cost, refund, setCooldown);
+            } finally {
+                busy.remove(id);
+            }
         }));
     }
 
