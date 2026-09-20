@@ -1,35 +1,91 @@
-<p align="center">
-  <b><a>Welcome to BetterRTP's repository!</a></b>
-</p>
+# Roam
 
-## Where's the Lang files?/Want to Contribute translating?  
-All language files are located [here](src/main/resources/lang)
-feel free to fork one of the language files and help translate!
+Random teleport for Paper 1.21.11 with settings that are easy to read and hard to get wrong.
 
-## Libraries
-BetterRTP uses and is compiled with the following libraries:
+Roam started as a fork of [BetterRTP](https://github.com/RonanPlugins/BetterRTP) (MIT) and was rewritten
+down to what a normal survival server needs. It also takes ideas from
+[JakesRTP](https://github.com/donvi-bz/JakesRTP): circle and square areas, a gaussian spread, caves for
+the nether, a location cache, `rtp-on-death` and sending players to a random place from portals or
+commands. No JakesRTP code is used, it has no license.
 
-- [ParticleLib](https://github.com/ByteZ1337/ParticleLib) (included) - Particles library by ByteZ1337. Find all supported particles [here](https://github.com/ByteZ1337/ParticleLib/blob/master/src/main/java/xyz/xenondevs/particle/ParticleEffect.java)
-- [PaperLib](https://github.com/PaperMC/PaperLib) (included) - Library for interfacing with PaperMC specific APIs, used for async chunk loading.
-- [FoliaLib](https://github.com/TechnicallyCoded/FoliaLib) (included) - Library for interfacing with Folia specific APIs, used for cross-platform timers.
+## What it does
 
-## Build instructions on Ubuntu
+- `/rtp` (or `/wild`) teleports you somewhere safe in the world you are in, `/rtp <world>` in another one.
+- Square or circle areas with a minimum and maximum radius, centred on the spawn, on the player, or on x and z.
+- Even spread, or a gaussian spread that makes a chosen distance more likely.
+- Safe spots are found in the background and kept ready, so `/rtp` is instant. Chunks are loaded without lag.
+- Surface search for normal worlds, cave search for the nether.
+- Per world, per group and default settings for radius, height, cooldown, delay, cost, biomes and more.
+- **Free fall**: teleport players a number of blocks above the safe block. They fall without taking damage.
+- Cooldowns that survive restarts, a delay that cancels when you move or get hurt, a cost through Vault.
+- Short invulnerability after landing, a sound and a title.
+- Never lands inside a WorldGuard region, or a GriefPrevention, HuskClaims or HuskTowns claim.
+- Random teleport for first joins and respawns, commands to run afterwards, PlaceholderAPI values.
+- `/rtp info` shows exactly what the settings work out to and tries a search.
 
-mvn clean install
+## Commands and permissions
 
-The file will be in the Target file.
+| Command | What it does | Permission |
+| --- | --- | --- |
+| `/rtp` | Teleport in your world | `roam.use` (default: everyone) |
+| `/rtp <world>` | Teleport to another world | `roam.use`, plus `roam.world.<world>` only if `per-world-permission` is on |
+| `/rtp player <name> [world]` | Send a player, with no cooldown, cost or delay. Good for portals and command blocks | `roam.admin` |
+| `/rtp info [world]` | Show the settings and try a search | `roam.admin` |
+| `/rtp reset <name>` | Clear a cooldown | `roam.admin` |
+| `/rtp reload` | Reload config.yml and messages.yml | `roam.admin` |
 
-## Where's the Wiki?  
-The wiki is available [here](../../wiki)!
-    
-<p align="center">
-  <b>Chat with us on Discord</b><br/>
-  <a href="https://discord.gg/8Kt4wKm"><img src="https://img.shields.io/discord/182633513474850818.svg?longCache=true&style=flat-square&label=Discord" alt="Discord" /></a><br/>
-  <b>Have a Suggestion? Make an issue!</b><br/>
-  <a href="../../issues"><img src="https://img.shields.io/github/issues-raw/SuperRonanCraft/BetterRTP.svg?longCache=true&style=flat-square&label=Issues" alt="GitHub issues" /></a><br/>
-  <br/>
-  <a href="https://www.spigotmc.org/resources/36081/">Thank you for viewing the Wiki for BetterRTP!</a><br/>
-  <i><a>Did this wiki help you out? Please give it a <b>Star</b> so I know it's getting use!</a></i><br/>
-  <br/>
-  <b><i><a href="https://www.spigotmc.org/resources/authors/superronancraft.13025/">Check out my other plugins!</a></i></b>
-</p>
+Other permissions: `roam.bypass.cooldown`, `roam.bypass.delay`, `roam.bypass.cost` and `roam.group.<name>`
+for the groups in config.yml.
+
+That is all. There is one permission check for worlds and it is off by default.
+
+## Settings
+
+Everything is in `config.yml`. `defaults` apply everywhere, `worlds.<name>` changes them for one world and
+`groups.<name>` changes them for players with `roam.group.<name>`. Only write what you change:
+
+```yaml
+defaults:
+  radius: { min: 100, max: 3000 }
+  cooldown: 60
+  delay: 3
+
+worlds:
+  world_nether:
+    search: cave
+    radius: { min: 50, max: 1500 }
+  spawn:
+    redirect: world        # /rtp in the spawn world sends players to "world"
+  creative:
+    enabled: false
+
+groups:
+  vip:                     # permission roam.group.vip
+    cooldown: 10
+    delay: 0
+```
+
+Numbers can be written any way (`50`, `50.0`, `"50"`). Mistakes such as a radius that is too small, or a world
+name that is not loaded, are reported in the console when the file loads.
+
+Free fall, for example 30 blocks above the ground: `free-fall: 30`.
+
+## PlaceholderAPI
+
+`%roam_cooldown%` (seconds left), `%roam_cooldown_formatted%`, `%roam_ready%` and `%roam_cost%`.
+
+## For developers
+
+`RoamPreTeleportEvent` (cancel it or change the destination) and `RoamTeleportEvent`.
+
+## Building
+
+```
+./gradlew build
+```
+
+The jar is in `build/libs`.
+
+## License
+
+MIT, see `LICENSE`.

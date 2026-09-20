@@ -1,5 +1,5 @@
 name: Roam
-version: '${version}'
+version: '1.0.0'
 main: dev.roam.RoamPlugin
 api-version: '1.21'
 description: Random teleport with simple settings
