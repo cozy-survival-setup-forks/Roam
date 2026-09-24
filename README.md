@@ -10,7 +10,7 @@ commands. No JakesRTP code is used, it has no license.
 
 ## What it does
 
-- `/rtp` (or `/wild`) teleports you somewhere safe in the world you are in, `/rtp <world>` in another one.
+- `/rtp` (or `/wild`) teleports you somewhere safe in the world you are in, or in `default-world` when that is set (handy for a spawn menu). `/rtp <world>` goes to the world you type.
 - Square or circle areas with a minimum and maximum radius, centred on the spawn, on the player, or on x and z.
 - Even spread, or a gaussian spread that makes a chosen distance more likely.
 - Safe spots are found in the background and kept ready, so `/rtp` is instant. Chunks are loaded without lag.

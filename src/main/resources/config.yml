@@ -8,6 +8,10 @@
 # a world that only sets radius.max keeps everything else from the defaults.
 # Use /rtp info to see what the settings work out to, and to try a search.
 
+# The world a plain /rtp (no world typed, for example from a menu) sends players to, wherever they stand.
+# Leave it empty to use the world the player is in. /rtp <world> always goes to the world typed.
+default-world: ""
+
 # Players can use /rtp in the world they are in with just roam.use.
 # When this is true, /rtp <world> also needs roam.world.<world> (or roam.world.*).
 per-world-permission: false

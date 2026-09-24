@@ -78,7 +78,10 @@ public final class RtpService {
             return;
         }
 
-        World asked = worldName == null ? player.getWorld() : Bukkit.getWorld(worldName);
+        String defaultWorld = worldName == null ? config.defaultWorld() : null;
+        World asked = worldName == null
+                ? (defaultWorld != null && Bukkit.getWorld(defaultWorld) != null ? Bukkit.getWorld(defaultWorld) : player.getWorld())
+                : Bukkit.getWorld(worldName);
         if (asked == null) {
             messages.send(player, "unknown-world", "world", worldName == null ? "" : worldName);
             return;

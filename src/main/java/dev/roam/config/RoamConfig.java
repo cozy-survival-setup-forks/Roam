@@ -84,6 +84,12 @@ public final class RoamConfig {
 
     // ---- general options ----
 
+    /** The world plain {@code /rtp} sends players to, or null to use the world they are in. */
+    public @Nullable String defaultWorld() {
+        String world = root().getString("default-world", "");
+        return world == null || world.isBlank() ? null : world.trim();
+    }
+
     public boolean perWorldPermission() {
         return root().getBoolean("per-world-permission", false);
     }
@@ -153,6 +159,11 @@ public final class RoamConfig {
             plugin.getLogger().warning("config.yml has no 'defaults' section, built-in values are used.");
         }
         checkRadius("defaults", defaults);
+
+        String defaultWorld = defaultWorld();
+        if (defaultWorld != null && Bukkit.getWorld(defaultWorld) == null) {
+            plugin.getLogger().warning("default-world is '" + defaultWorld + "', which is not a loaded world. Plain /rtp will use the player's world.");
+        }
 
         ConfigurationSection worlds = root().getConfigurationSection("worlds");
         if (worlds != null) {
