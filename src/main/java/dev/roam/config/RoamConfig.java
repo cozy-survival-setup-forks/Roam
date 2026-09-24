@@ -84,10 +84,15 @@ public final class RoamConfig {
 
     // ---- general options ----
 
-    /** The world plain {@code /rtp} sends players to, or null to use the world they are in. */
-    public @Nullable String defaultWorld() {
-        String world = root().getString("default-world", "");
-        return world == null || world.isBlank() ? null : world.trim();
+    /** True if a plain /rtp must not teleport, so /rtp <world> is the only way. */
+    public boolean requireWorld() {
+        return root().getBoolean("require-world", false);
+    }
+
+    /** Command a plain /rtp runs as the player when require-world is on, or blank for none. */
+    public String menuCommand() {
+        String command = root().getString("menu-command", "");
+        return command == null ? "" : command.trim().replaceFirst("^/", "");
     }
 
     public boolean perWorldPermission() {
@@ -160,10 +165,6 @@ public final class RoamConfig {
         }
         checkRadius("defaults", defaults);
 
-        String defaultWorld = defaultWorld();
-        if (defaultWorld != null && Bukkit.getWorld(defaultWorld) == null) {
-            plugin.getLogger().warning("default-world is '" + defaultWorld + "', which is not a loaded world. Plain /rtp will use the player's world.");
-        }
 
         ConfigurationSection worlds = root().getConfigurationSection("worlds");
         if (worlds != null) {

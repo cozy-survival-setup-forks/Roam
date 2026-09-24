@@ -8,9 +8,12 @@
 # a world that only sets radius.max keeps everything else from the defaults.
 # Use /rtp info to see what the settings work out to, and to try a search.
 
-# The world a plain /rtp (no world typed, for example from a menu) sends players to, wherever they stand.
-# Leave it empty to use the world the player is in. /rtp <world> always goes to the world typed.
-default-world: ""
+# Set this to true to make /rtp only work as /rtp <world>. A plain /rtp then does not teleport anyone, so the
+# command can be used to open a menu instead. When menu-command is set, a plain /rtp runs it as the player,
+# for example "dm open rtp" for a DeluxeMenus menu whose items run /rtp world, /rtp world_nether and so on.
+# Leave menu-command empty to only show the usage message.
+require-world: false
+menu-command: ""
 
 # Players can use /rtp in the world they are in with just roam.use.
 # When this is true, /rtp <world> also needs roam.world.<world> (or roam.world.*).

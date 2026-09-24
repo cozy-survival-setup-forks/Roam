@@ -22,6 +22,7 @@ unknown-world: "<red>The world <white><world><red> doesn't exist."
 players-only: "<red>Only players can do that."
 
 reloaded: "Reloaded."
+usage-world: "<red>Usage: /rtp <world>"
 usage-player: "<red>Usage: /rtp player <name> [world]"
 usage-reset: "<red>Usage: /rtp reset <name>"
 player-not-found: "<red><player> is not online."
