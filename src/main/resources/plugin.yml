@@ -14,7 +14,7 @@ softdepend:
 commands:
   rtp:
     description: Teleport to a random place
-    aliases: [wild, randomtp]
+    aliases: [wild, randomtp, roamrtp]
     usage: /<command> [world]
 
 permissions:

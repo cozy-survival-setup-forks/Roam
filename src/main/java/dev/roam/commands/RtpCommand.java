@@ -81,7 +81,7 @@ public final class RtpCommand implements CommandExecutor, TabCompleter {
         String command = plugin.roamConfig().menuCommand();
         String first = command.split(" ", 2)[0].toLowerCase(Locale.ROOT);
         // never run /rtp from /rtp
-        if (command.isEmpty() || first.equals("rtp") || first.equals("wild") || first.equals("roam:rtp")) {
+        if (command.isEmpty() || first.equals("rtp") || first.equals("wild") || first.equals("roamrtp") || first.equals("roam:rtp")) {
             plugin.messages().send(player, "usage-world");
             return;
         }
