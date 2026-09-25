@@ -17,12 +17,12 @@ import java.util.Locale;
 
 /**
  * <pre>
- * /rtp                        teleport in the world you are in (or run menu-command when require-world is on)
- * /rtp &lt;world&gt;                 teleport to another world
- * /rtp player &lt;name&gt; [world]   teleport someone else (roam.admin)
- * /rtp info [world]           show the settings of a world and try a search (roam.admin)
- * /rtp reset &lt;name&gt;            clear someone's cooldown (roam.admin)
- * /rtp reload                 reload the files (roam.admin)
+ * /roamrtp                        teleport in the world you are in
+ * /roamrtp &lt;world&gt;                 teleport to another world
+ * /roamrtp player &lt;name&gt; [world]   teleport someone else (roam.admin)
+ * /roamrtp info [world]           show the settings of a world and try a search (roam.admin)
+ * /roamrtp reset &lt;name&gt;            clear someone's cooldown (roam.admin)
+ * /roamrtp reload                 reload the files (roam.admin)
  * </pre>
  */
 public final class RtpCommand implements CommandExecutor, TabCompleter {
@@ -68,24 +68,8 @@ public final class RtpCommand implements CommandExecutor, TabCompleter {
             messages.send(sender, "players-only");
             return true;
         }
-        if (args.length == 0 && plugin.roamConfig().requireWorld()) {
-            plainRtp(player);
-            return true;
-        }
         plugin.service().request(player, args.length > 0 ? args[0] : null, false);
         return true;
-    }
-
-    /** A plain /rtp while require-world is on: no teleport, but it can open a menu. */
-    private void plainRtp(Player player) {
-        String command = plugin.roamConfig().menuCommand();
-        String first = command.split(" ", 2)[0].toLowerCase(Locale.ROOT);
-        // never run /rtp from /rtp
-        if (command.isEmpty() || first.equals("rtp") || first.equals("wild") || first.equals("roamrtp") || first.equals("roam:rtp")) {
-            plugin.messages().send(player, "usage-world");
-            return;
-        }
-        player.performCommand(command.replace("%player%", player.getName()));
     }
 
     private boolean admin(CommandSender sender) {

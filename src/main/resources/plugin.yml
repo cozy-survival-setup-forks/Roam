@@ -12,17 +12,19 @@ softdepend:
   - HuskTowns
 
 commands:
-  rtp:
+  roamrtp:
     description: Teleport to a random place
-    aliases: [wild, randomtp, roamrtp]
+    usage: /<command> [world]
+  roam:
+    description: Same as /roamrtp, also info, reset, reload and player
     usage: /<command> [world]
 
 permissions:
   roam.use:
-    description: Use /rtp
+    description: Use /roamrtp
     default: true
   roam.world.*:
-    description: Use /rtp in every world, when per-world-permission is on
+    description: Use /roamrtp in every world, when per-world-permission is on
     default: op
   roam.bypass.cooldown:
     description: No cooldown
@@ -34,7 +36,7 @@ permissions:
     description: The teleport is free
     default: op
   roam.admin:
-    description: /rtp player, info, reset and reload
+    description: /roamrtp player, info, reset and reload
     default: op
   roam.group.*:
     description: Every group (the first one in config.yml wins)

@@ -39,10 +39,12 @@ public class RoamPlugin extends JavaPlugin {
         reloadAll();
 
         RtpCommand command = new RtpCommand(this);
-        PluginCommand rtp = getCommand("rtp");
-        if (rtp != null) {
-            rtp.setExecutor(command);
-            rtp.setTabCompleter(command);
+        for (String name : new String[]{"roamrtp", "roam"}) {
+            PluginCommand rtp = getCommand(name);
+            if (rtp != null) {
+                rtp.setExecutor(command);
+                rtp.setTabCompleter(command);
+            }
         }
         Bukkit.getPluginManager().registerEvents(new RoamListener(this), this);
 

@@ -84,17 +84,6 @@ public final class RoamConfig {
 
     // ---- general options ----
 
-    /** True if a plain /rtp must not teleport, so /rtp <world> is the only way. */
-    public boolean requireWorld() {
-        return root().getBoolean("require-world", false);
-    }
-
-    /** Command a plain /rtp runs as the player when require-world is on, or blank for none. */
-    public String menuCommand() {
-        String command = root().getString("menu-command", "");
-        return command == null ? "" : command.trim().replaceFirst("^/", "");
-    }
-
     public boolean perWorldPermission() {
         return root().getBoolean("per-world-permission", false);
     }

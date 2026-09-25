@@ -6,17 +6,10 @@
 #   groups.<name>     changes some of them for players with the permission roam.group.<name>
 # A group wins over a world, and a world wins over the defaults. You only write what you change:
 # a world that only sets radius.max keeps everything else from the defaults.
-# Use /rtp info to see what the settings work out to, and to try a search.
+# Use /roamrtp info to see what the settings work out to, and to try a search.
 
-# Set this to true to make /rtp only work as /rtp <world>. A plain /rtp then does not teleport anyone, so the
-# command can be used to open a menu instead. When menu-command is set, a plain /rtp runs it as the player,
-# for example "dm open rtp" for a DeluxeMenus menu whose items run /rtp world, /rtp world_nether and so on.
-# Leave menu-command empty to only show the usage message.
-require-world: false
-menu-command: ""
-
-# Players can use /rtp in the world they are in with just roam.use.
-# When this is true, /rtp <world> also needs roam.world.<world> (or roam.world.*).
+# Players can use /roamrtp in the world they are in with just roam.use.
+# When this is true, /roamrtp <world> also needs roam.world.<world> (or roam.world.*).
 per-world-permission: false
 
 defaults:
@@ -57,9 +50,9 @@ worlds:
       min: 0
       max: 1000
   # spawn:
-  #   redirect: world      # /rtp in the spawn world teleports to "world"
+  #   redirect: world      # /roamrtp in the spawn world teleports to "world"
   # creative:
-  #   enabled: false       # no /rtp from or to this world
+  #   enabled: false       # no /roamrtp from or to this world
 
 # The first group the player has the permission for is used, so put the best one first.
 groups:
@@ -83,7 +76,7 @@ delay-cancel:
 # How many random spots to try before giving up.
 max-attempts: 30
 
-# Roam keeps some safe spots ready in the background, so /rtp is instant.
+# Roam keeps some safe spots ready in the background, so /roamrtp is instant.
 cache:
   enabled: true
   size: 6

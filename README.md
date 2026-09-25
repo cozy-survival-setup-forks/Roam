@@ -10,10 +10,10 @@ commands. No JakesRTP code is used, it has no license.
 
 ## What it does
 
-- `/rtp` (or `/wild`, `/randomtp`, `/roamrtp`) teleports you somewhere safe in the world you are in, `/rtp <world>` in another one. With `require-world: true` a plain `/rtp` does not teleport at all, so it can open a menu (`menu-command`, for example `dm open rtp`) while `/rtp <world>` keeps working. If a DeluxeMenus menu registers `rtp` as its own `open_command`, that command replaces Roam's and `/rtp world` only opens the menu. Use `/roamrtp world` (or `/roam:rtp world`) in the menu items instead.
+- `/roamrtp` (or `/roam`) teleports you somewhere safe in the world you are in, `/roamrtp <world>` in another one. Roam only has these two commands, so it does not collide with `/rtp` or `/wild` from a DeluxeMenus menu or another plugin. Use `[player] roamrtp <world>` in menu items.
 - Square or circle areas with a minimum and maximum radius, centred on the spawn, on the player, or on x and z.
 - Even spread, or a gaussian spread that makes a chosen distance more likely.
-- Safe spots are found in the background and kept ready, so `/rtp` is instant. Chunks are loaded without lag.
+- Safe spots are found in the background and kept ready, so `/roamrtp` is instant. Chunks are loaded without lag.
 - Surface search for normal worlds, cave search for the nether.
 - Per world, per group and default settings for radius, height, cooldown, delay, cost, biomes and more.
 - **Free fall**: teleport players a number of blocks above the safe block. They fall without taking damage.
@@ -21,24 +21,24 @@ commands. No JakesRTP code is used, it has no license.
 - Short invulnerability after landing, a sound and a title.
 - Never lands inside a WorldGuard region, or a GriefPrevention, HuskClaims or HuskTowns claim.
 - Random teleport for first joins and respawns, commands to run afterwards, PlaceholderAPI values.
-- `/rtp info` shows exactly what the settings work out to and tries a search.
+- `/roamrtp info` shows exactly what the settings work out to and tries a search.
 
 ## Speed
 
 - Chunks are loaded on Paper's worker threads, never by freezing the main thread.
-- Ready spots are found in the background. When a player teleports, the spot's chunk is loaded from disk (it was generated already) and checked again, so `/rtp` takes a fraction of a second.
+- Ready spots are found in the background. When a player teleports, the spot's chunk is loaded from disk (it was generated already) and checked again, so `/roamrtp` takes a fraction of a second.
 - Measured on a real 1.21.11 server with a real client: a teleport to a ready spot took about 100-200 ms, and the player's ping stayed at 1-3 ms during every teleport. When the destination has never been visited, the server still has to generate the chunks around the player, which is the same for every plugin.
 
 ## Commands and permissions
 
 | Command | What it does | Permission |
 | --- | --- | --- |
-| `/rtp` | Teleport in your world | `roam.use` (default: everyone) |
-| `/rtp <world>` | Teleport to another world | `roam.use`, plus `roam.world.<world>` only if `per-world-permission` is on |
-| `/rtp player <name> [world]` | Send a player, with no cooldown, cost or delay. Good for portals and command blocks | `roam.admin` |
-| `/rtp info [world]` | Show the settings and try a search | `roam.admin` |
-| `/rtp reset <name>` | Clear a cooldown | `roam.admin` |
-| `/rtp reload` | Reload config.yml and messages.yml | `roam.admin` |
+| `/roamrtp` | Teleport in your world | `roam.use` (default: everyone) |
+| `/roamrtp <world>` | Teleport to another world | `roam.use`, plus `roam.world.<world>` only if `per-world-permission` is on |
+| `/roamrtp player <name> [world]` | Send a player, with no cooldown, cost or delay. Good for portals and command blocks | `roam.admin` |
+| `/roamrtp info [world]` | Show the settings and try a search | `roam.admin` |
+| `/roamrtp reset <name>` | Clear a cooldown | `roam.admin` |
+| `/roamrtp reload` | Reload config.yml and messages.yml | `roam.admin` |
 
 Other permissions: `roam.bypass.cooldown`, `roam.bypass.delay`, `roam.bypass.cost` and `roam.group.<name>`
 for the groups in config.yml.
@@ -61,7 +61,7 @@ worlds:
     search: cave
     radius: { min: 50, max: 1500 }
   spawn:
-    redirect: world        # /rtp in the spawn world sends players to "world"
+    redirect: world        # /roamrtp in the spawn world sends players to "world"
   creative:
     enabled: false
 
