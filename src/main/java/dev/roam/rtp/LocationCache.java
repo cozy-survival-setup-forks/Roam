@@ -52,6 +52,18 @@ public final class LocationCache {
         task = Bukkit.getScheduler().runTaskTimer(plugin, this::refill, 100L, 40L);
     }
 
+    /** Drops the spots of a world that was unloaded, its settings point at a world object that is gone. */
+    public void forget(World world) {
+        entries.values().removeIf(entry -> entry.settings.world().equals(world));
+    }
+
+    /** Starts keeping spots ready for a world that was loaded, such as a world that was reset. */
+    public void watch(World world) {
+        if (task != null && plugin.roamConfig().isWorldEnabled(world.getName())) {
+            register(plugin.roamConfig().settingsFor(world, null));
+        }
+    }
+
     public void stop() {
         if (task != null) task.cancel();
         task = null;

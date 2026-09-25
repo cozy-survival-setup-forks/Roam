@@ -6,6 +6,8 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDamageEvent;
+import org.bukkit.event.world.WorldLoadEvent;
+import org.bukkit.event.world.WorldUnloadEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.event.player.PlayerRespawnEvent;
@@ -55,6 +57,16 @@ public final class RoamListener implements Listener {
         if (plugin.roamConfig().cancelOnDamage() && plugin.service().isWaiting(player) && event.getFinalDamage() > 0) {
             plugin.service().cancel(player, "delay-cancelled-damage");
         }
+    }
+
+    @EventHandler
+    public void onWorldUnload(WorldUnloadEvent event) {
+        plugin.cache().forget(event.getWorld());
+    }
+
+    @EventHandler
+    public void onWorldLoad(WorldLoadEvent event) {
+        plugin.cache().watch(event.getWorld());
     }
 
     @EventHandler
