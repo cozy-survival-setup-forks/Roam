@@ -29,10 +29,6 @@ public final class Layers {
         return null;
     }
 
-    public boolean has(String path) {
-        return layerWith(path) != null;
-    }
-
     public int getInt(String path, int fallback) {
         ConfigurationSection layer = layerWith(path);
         if (layer == null) return fallback;
