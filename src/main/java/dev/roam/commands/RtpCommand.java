@@ -41,8 +41,7 @@ public final class RtpCommand implements CommandExecutor, TabCompleter {
             switch (args[0].toLowerCase(Locale.ROOT)) {
                 case "reload" -> {
                     if (!admin(sender)) return true;
-                    plugin.reloadAll();
-                    messages.send(sender, "reloaded");
+                    messages.send(sender, plugin.reloadAll() ? "reloaded" : "reload-failed");
                     return true;
                 }
                 case "player" -> {
@@ -98,13 +97,15 @@ public final class RtpCommand implements CommandExecutor, TabCompleter {
             plugin.messages().send(sender, "usage-reset");
             return true;
         }
-        Player target = Bukkit.getPlayerExact(args[1]);
+        // an offline player can have a cooldown too, but only a name the server has seen is looked up
+        org.bukkit.OfflinePlayer target = Bukkit.getPlayerExact(args[1]);
+        if (target == null) target = Bukkit.getOfflinePlayerIfCached(args[1]);
         if (target == null) {
             plugin.messages().send(sender, "player-not-found", "player", args[1]);
             return true;
         }
         plugin.cooldowns().clear(target.getUniqueId());
-        plugin.messages().send(sender, "cooldown-reset", "player", target.getName());
+        plugin.messages().send(sender, "cooldown-reset", "player", target.getName() == null ? args[1] : target.getName());
         return true;
     }
 
@@ -136,7 +137,7 @@ public final class RtpCommand implements CommandExecutor, TabCompleter {
         line(sender, "Cache", plugin.cache().size(s) + " spots ready");
 
         long start = System.nanoTime();
-        plugin.finder().find(s, () -> false).thenAccept(found -> {
+        plugin.finder().find(s).thenAccept(found -> {
             long ms = (System.nanoTime() - start) / 1_000_000;
             if (found.isPresent()) {
                 var spot = found.get().spot();

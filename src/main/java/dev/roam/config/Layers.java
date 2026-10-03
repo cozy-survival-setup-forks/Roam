@@ -80,6 +80,12 @@ public final class Layers {
         return layer == null ? List.of() : layer.getStringList(path);
     }
 
+    /** The raw value at a path, from the most specific layer that sets it. */
+    public Object get(String path) {
+        ConfigurationSection layer = layerWith(path);
+        return layer == null ? null : layer.get(path);
+    }
+
     /** The section at a path, from the most specific layer that has one. */
     public ConfigurationSection getSection(String path) {
         for (ConfigurationSection layer : layers) {

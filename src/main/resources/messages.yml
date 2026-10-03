@@ -22,6 +22,7 @@ unknown-world: "<red>The world <white><world><red> doesn't exist."
 players-only: "<red>Only players can do that."
 
 reloaded: "Reloaded."
+reload-failed: "<red>A file has a mistake in it and was not reloaded, the old settings stay. The console says which one."
 usage-player: "<red>Usage: /roamrtp player <name> [world]"
 usage-reset: "<red>Usage: /roamrtp reset <name>"
 player-not-found: "<red><player> is not online."

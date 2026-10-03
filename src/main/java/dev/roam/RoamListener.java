@@ -50,7 +50,7 @@ public final class RoamListener implements Listener {
     public void onDamage(EntityDamageEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
 
-        if (plugin.service().blocksDamage(player.getUniqueId(), event.getCause() == EntityDamageEvent.DamageCause.FALL)) {
+        if (plugin.service().blocksDamage(player.getUniqueId(), event.getCause())) {
             event.setCancelled(true);
             return;
         }

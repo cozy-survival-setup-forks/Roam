@@ -69,4 +69,14 @@ class LayersTest {
         assertEquals(2, layers.getStringList("blocked-biomes").size());
         assertEquals(5, layers.getSection("center").getInt("x"));
     }
+
+    @Test
+    void aWorldCentreBeatsTheDefaultsWhateverFormItIsWrittenIn() throws Exception {
+        var defaults = yaml("center:\n  x: 0\n  z: 0\n");
+        var world = yaml("center: player\n");
+        Layers layers = new Layers(world, defaults);
+
+        assertEquals("player", layers.get("center"));
+        assertEquals(0, ((org.bukkit.configuration.ConfigurationSection) new Layers(defaults).get("center")).getInt("x"));
+    }
 }

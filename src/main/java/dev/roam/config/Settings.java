@@ -50,7 +50,8 @@ public record Settings(
         int centerX;
         int centerZ;
         boolean follows = false;
-        ConfigurationSection centerSection = layers.getSection("center");
+        // whichever layer sets the centre decides, even if the defaults write it the other way
+        ConfigurationSection centerSection = layers.get("center") instanceof ConfigurationSection s ? s : null;
         String centerText = centerSection == null ? layers.getString("center", "spawn").toLowerCase(Locale.ROOT) : "";
         if (centerSection != null) {
             centerX = centerSection.getInt("x", 0);

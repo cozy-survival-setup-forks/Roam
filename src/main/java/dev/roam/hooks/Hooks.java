@@ -46,13 +46,15 @@ public final class Hooks {
     private void add(String name, Predicate<Location> check) {
         AtomicBoolean broken = new AtomicBoolean(false);
         claimChecks.add(location -> {
-            if (broken.get()) return false;
+            // if the check cannot be trusted the spot counts as claimed: better no teleport than one into a claim
+            if (broken.get()) return true;
             try {
                 return check.test(location);
             } catch (Throwable error) {
                 broken.set(true);
-                plugin.getLogger().warning("The " + name + " check failed (" + error.getClass().getSimpleName() + "), it is ignored until the next reload.");
-                return false;
+                plugin.getLogger().severe("The " + name + " check failed (" + error.getClass().getSimpleName() + "), so every spot is refused until"
+                        + " /roam reload. Set avoid-claims: false in config.yml to teleport without checking claims.");
+                return true;
             }
         });
         plugin.getLogger().info("Avoiding claims from " + name + ".");

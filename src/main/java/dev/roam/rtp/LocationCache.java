@@ -27,6 +27,9 @@ public final class LocationCache {
         final Settings settings;
         final Deque<Location> spots = new ArrayDeque<>();
         boolean searching = false;
+        /** Refill rounds to skip after searches that found nothing, so an impossible setting does not generate chunks for ever. */
+        int backoff = 0;
+        int failures = 0;
 
         Entry(Settings settings) {
             this.settings = settings;
@@ -108,10 +111,24 @@ public final class LocationCache {
         int target = plugin.roamConfig().cacheSize();
         for (Entry entry : entries.values()) {
             if (entry.searching || entry.spots.size() >= target) continue;
+            if (entry.backoff > 0) {
+                entry.backoff--;
+                continue;
+            }
             entry.searching = true;
-            plugin.finder().find(entry.settings, () -> false).whenComplete((found, error) -> {
+            plugin.finder().find(entry.settings).whenComplete((found, error) -> {
                 entry.searching = false;
-                if (error == null && found != null && found.isPresent()) entry.spots.add(found.get().spot());
+                if (error == null && found != null && found.isPresent()) {
+                    entry.spots.add(found.get().spot());
+                    entry.failures = 0;
+                } else {
+                    entry.failures++;
+                    entry.backoff = Math.min(64, 1 << Math.min(6, entry.failures));
+                    if (entry.failures == 3) {
+                        plugin.getLogger().warning("No safe spot found in " + entry.settings.world().getName()
+                                + " after several searches, trying less often. Check the radius, biomes and y settings.");
+                    }
+                }
             });
         }
     }

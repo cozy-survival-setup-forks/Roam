@@ -9,6 +9,7 @@ import dev.roam.rtp.LocationCache;
 import dev.roam.rtp.LocationFinder;
 import dev.roam.rtp.RtpService;
 import org.bukkit.Bukkit;
+import java.util.logging.Level;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -25,6 +26,15 @@ public class RoamPlugin extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        try {
+            enableInner();
+        } catch (RuntimeException e) {
+            getLogger().log(Level.SEVERE, "Roam could not start, check config.yml and messages.yml for mistakes", e);
+            Bukkit.getPluginManager().disablePlugin(this);
+        }
+    }
+
+    private void enableInner() {
         config = new RoamConfig(this);
         messages = new Messages(this);
         cooldowns = new CooldownStore(this);
@@ -58,17 +68,23 @@ public class RoamPlugin extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        cache.stop();
-        cooldowns.saveIfNeeded();
+        if (cache != null) cache.stop();
+        if (cooldowns != null) cooldowns.saveIfNeeded();
     }
 
-    /** Reloads config.yml, messages.yml and the plugin hooks. */
-    public void reloadAll() {
-        config.load();
-        messages.load();
+    /**
+     * Reloads config.yml, messages.yml and the plugin hooks.
+     *
+     * @return false if a file has a mistake in it: that file is left as it was loaded before
+     */
+    public boolean reloadAll() {
+        boolean ok = config.load();
+        ok &= messages.load();
+        cooldowns.keepFor(config.longestCooldown());
         hooks.load();
         finder.reload();
         cache.start();
+        return ok;
     }
 
     public RoamConfig roamConfig() {

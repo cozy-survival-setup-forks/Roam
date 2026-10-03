@@ -12,6 +12,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Player;
+import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 /**
  * One random teleport from the command to the landing: permissions, cooldown, cost, the warm up
@@ -34,17 +36,15 @@ public final class RtpService {
         final Location start;
         final Settings settings;
         final CompletableFuture<Optional<LocationFinder.Found>> search;
-        final boolean free;
         boolean cancelled = false;
         BukkitTask task;
         int ticks = 0;
 
-        Session(Player player, Settings settings, CompletableFuture<Optional<LocationFinder.Found>> search, boolean free) {
+        Session(Player player, Settings settings, CompletableFuture<Optional<LocationFinder.Found>> search) {
             this.player = player;
             this.start = player.getLocation();
             this.settings = settings;
             this.search = search;
-            this.free = free;
         }
     }
 
@@ -93,6 +93,11 @@ public final class RtpService {
             messages.send(player, "unknown-world", "world", config.resolveWorld(asked.getName()));
             return;
         }
+        // a redirect must not lead somewhere the player has no permission for
+        if (!forced && config.perWorldPermission() && !target.equals(asked) && !canUseWorld(player, target.getName())) {
+            messages.send(player, "no-world-permission", "world", target.getName());
+            return;
+        }
         if (!config.isWorldEnabled(asked.getName()) || !config.isWorldEnabled(target.getName())) {
             if (!forced) {
                 messages.send(player, "world-disabled", "world", asked.getName());
@@ -123,28 +128,37 @@ public final class RtpService {
         busy.put(id, true);
         plugin.cache().register(settings);
 
-        CompletableFuture<Optional<LocationFinder.Found>> search = search(settings);
+        CompletableFuture<Optional<LocationFinder.Found>> search;
+        try {
+            // a search that never answers must not keep the player stuck as "already teleporting"
+            search = search(settings).orTimeout(60, TimeUnit.SECONDS);
+        } catch (RuntimeException problem) {
+            busy.remove(id);
+            messages.send(player, "failed");
+            plugin.getLogger().warning("A random teleport for " + player.getName() + " could not start: " + problem);
+            return;
+        }
         int delay = skipDelay ? 0 : settings.delaySeconds();
         if (delay <= 0) {
             search.whenComplete((found, error) -> finish(player, settings, error != null ? Optional.empty() : found, cost, !skipCooldown));
             return;
         }
 
-        Session session = new Session(player, settings, search, false);
+        Session session = new Session(player, settings, search);
         waiting.put(id, session);
         messages.send(player, "delay-start", "seconds", String.valueOf(delay));
         session.task = Bukkit.getScheduler().runTaskTimer(plugin, () -> tick(session, delay, cost, !skipCooldown), 5L, 5L);
     }
 
     private CompletableFuture<Optional<LocationFinder.Found>> search(Settings settings) {
-        if (settings.followsPlayer()) return plugin.finder().find(settings, () -> false);
+        if (settings.followsPlayer()) return plugin.finder().find(settings);
 
         // A spot that was found in advance, or a fresh search if there is none.
         return plugin.cache().pollAsync(settings).thenCompose(ready -> {
             if (ready.isPresent()) {
                 return CompletableFuture.completedFuture(Optional.of(new LocationFinder.Found(ready.get(), 0)));
             }
-            return plugin.finder().find(settings, () -> false);
+            return plugin.finder().find(settings);
         });
     }
 
@@ -213,6 +227,11 @@ public final class RtpService {
 
     /** Lands the player. Whatever goes wrong, the player must not stay stuck as "already teleporting". */
     private void finish(Player player, Settings settings, Optional<LocationFinder.Found> found, double cost, boolean setCooldown) {
+        if (!Bukkit.isPrimaryThread()) {
+            // a search that timed out answers from another thread
+            Bukkit.getScheduler().runTask(plugin, () -> finish(player, settings, found, cost, setCooldown));
+            return;
+        }
         try {
             land(player, settings, found, cost, setCooldown);
         } catch (Throwable problem) {
@@ -221,11 +240,13 @@ public final class RtpService {
         }
     }
 
-    private void land(Player player, Settings settings, Optional<LocationFinder.Found> found, double cost, boolean setCooldown) {
-        UUID id = player.getUniqueId();
+    private void land(Player asked, Settings settings, Optional<LocationFinder.Found> found, double cost, boolean setCooldown) {
+        UUID id = asked.getUniqueId();
         var messages = plugin.messages();
 
-        if (!player.isOnline()) {
+        // the player may have left and come back while the search ran: use the one who is here now
+        Player player = Bukkit.getPlayer(id);
+        if (player == null) {
             busy.remove(id);
             return;
         }
@@ -238,7 +259,7 @@ public final class RtpService {
         Location destination = found.get().spot().clone();
         destination.setYaw(player.getLocation().getYaw());
         destination.setPitch(player.getLocation().getPitch());
-        if (settings.freeFall() > 0) {
+        if (freeFalls(settings)) {
             destination.setY(Math.min(destination.getY() + settings.freeFall(), settings.world().getMaxHeight() - 1));
         }
 
@@ -290,7 +311,7 @@ public final class RtpService {
 
         long now = System.currentTimeMillis();
         if (config.invulnerableSeconds() > 0) invulnerableUntil.put(id, now + config.invulnerableSeconds() * 1000L);
-        if (settings.freeFall() > 0) {
+        if (freeFalls(settings)) {
             // Falling from the chosen height must not hurt. This ends when they land.
             fallProtectedUntil.put(id, now + 60_000L);
             watchLanding(player);
@@ -323,6 +344,11 @@ public final class RtpService {
         busy.remove(id);
     }
 
+    /** Free fall needs open sky: in a cave search the column above the spot is rock, or the roof of the nether. */
+    private static boolean freeFalls(Settings settings) {
+        return settings.freeFall() > 0 && settings.search() != Settings.Search.CAVE;
+    }
+
     /** Removes the fall protection soon after the player touches the ground. */
     private void watchLanding(Player player) {
         int[] ticks = {0};
@@ -344,13 +370,20 @@ public final class RtpService {
 
     // ---- protection while landing ----
 
-    /** True if damage should be cancelled: the short invulnerability, or a fall from free fall. */
-    public boolean blocksDamage(UUID player, boolean fall) {
+    /**
+     * True if damage should be cancelled: a landing (a fall, or being stuck in a block) for the short
+     * invulnerability, so it cannot be used to walk away from a fight, or a fall from free fall.
+     */
+    public boolean blocksDamage(UUID player, EntityDamageEvent.DamageCause cause) {
         long now = System.currentTimeMillis();
+        boolean fall = cause == EntityDamageEvent.DamageCause.FALL;
         Long until = invulnerableUntil.get(player);
         if (until != null) {
-            if (now < until) return true;
-            invulnerableUntil.remove(player);
+            if (now < until) {
+                if (fall || cause == EntityDamageEvent.DamageCause.SUFFOCATION || cause == EntityDamageEvent.DamageCause.FLY_INTO_WALL) return true;
+            } else {
+                invulnerableUntil.remove(player);
+            }
         }
         if (fall) {
             Long protectedUntil = fallProtectedUntil.get(player);
@@ -364,8 +397,12 @@ public final class RtpService {
 
     public void forget(UUID player) {
         Session session = waiting.remove(player);
-        if (session != null && session.task != null) session.task.cancel();
-        busy.remove(player);
+        if (session != null) {
+            if (session.task != null) session.task.cancel();
+            busy.remove(player);
+        }
+        // with no delay the search is still running: it clears the mark itself when it ends, so a quick
+        // rejoin cannot start a second teleport (and a second charge) next to it
         invulnerableUntil.remove(player);
         fallProtectedUntil.remove(player);
     }

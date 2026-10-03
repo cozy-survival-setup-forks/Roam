@@ -4,9 +4,13 @@ import dev.roam.RoamPlugin;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.configuration.InvalidConfigurationException;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
 
+import java.io.File;
+import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,10 +28,30 @@ public final class RoamConfig {
         this.plugin = plugin;
     }
 
-    public void load() {
+    /** @return false if config.yml has a mistake in it: the settings loaded before are then kept */
+    public boolean load() {
         plugin.saveDefaultConfig();
+        try {
+            // a parse error would otherwise turn into an empty file, and every world rule would be lost
+            new YamlConfiguration().load(new File(plugin.getDataFolder(), "config.yml"));
+        } catch (IOException | InvalidConfigurationException e) {
+            plugin.getLogger().severe("config.yml has a mistake in it and was not loaded: " + e.getMessage());
+            return false;
+        }
         plugin.reloadConfig();
         validate();
+        return true;
+    }
+
+    /** The longest cooldown in seconds set anywhere, so saved cooldowns are kept long enough. */
+    public long longestCooldown() {
+        long longest = Math.max(0, root().getLong("defaults.cooldown", 60));
+        for (String top : new String[]{"worlds", "groups"}) {
+            ConfigurationSection section = root().getConfigurationSection(top);
+            if (section == null) continue;
+            for (String name : section.getKeys(false)) longest = Math.max(longest, section.getLong(name + ".cooldown", 0));
+        }
+        return longest;
     }
 
     private ConfigurationSection root() {
@@ -101,7 +125,7 @@ public final class RoamConfig {
     }
 
     public int maxAttempts() {
-        return Math.max(1, root().getInt("max-attempts", 30));
+        return Math.max(1, Math.min(200, root().getInt("max-attempts", 30)));
     }
 
     public int invulnerableSeconds() {

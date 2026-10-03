@@ -16,7 +16,6 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BooleanSupplier;
 
 /**
  * Finds safe spots. A random point is picked, its chunk is loaded without freezing the server (Paper
@@ -49,37 +48,54 @@ public final class LocationFinder {
     }
 
     /** Searches for a safe spot. The future holds nothing if no safe spot was found in time. */
-    public CompletableFuture<Optional<Found>> find(Settings settings, BooleanSupplier cancelled) {
+    public CompletableFuture<Optional<Found>> find(Settings settings) {
         CompletableFuture<Optional<Found>> result = new CompletableFuture<>();
-        attempt(settings, cancelled, 1, plugin.roamConfig().maxAttempts(), result);
+        attempt(settings, 1, plugin.roamConfig().maxAttempts(), result);
         return result;
     }
 
-    private void attempt(Settings settings, BooleanSupplier cancelled, int number, int max, CompletableFuture<Optional<Found>> result) {
-        if (cancelled.getAsBoolean() || number > max) {
-            result.complete(Optional.empty());
-            return;
-        }
-
-        int[] xz = Sampler.sample(random, settings);
-        World world = settings.world();
-
-        // Points outside the border can never be used, there is no need to load their chunk.
-        if (!world.getWorldBorder().isInside(new Location(world, xz[0], 64, xz[1]))) {
-            attempt(settings, cancelled, number + 1, max, result);
-            return;
-        }
-
-        world.getChunkAtAsync(xz[0] >> 4, xz[1] >> 4, true).whenComplete((chunk, error) -> onMainThread(() -> {
-            if (error == null && chunk != null) {
-                Optional<Location> spot = check(settings, xz[0], xz[1]);
-                if (spot.isPresent()) {
-                    result.complete(Optional.of(new Found(spot.get(), number)));
-                    return;
+    private void attempt(Settings settings, int number, int max, CompletableFuture<Optional<Found>> result) {
+        try {
+            World world = settings.world();
+            // Points outside the border can never be used, there is no need to load their chunk.
+            int[] xz = null;
+            while (number <= max) {
+                int[] point = Sampler.sample(random, settings);
+                if (world.getWorldBorder().isInside(new Location(world, point[0], 64, point[1]))) {
+                    xz = point;
+                    break;
                 }
+                number++;
             }
-            attempt(settings, cancelled, number + 1, max, result);
-        }));
+            if (xz == null) {
+                result.complete(Optional.empty());
+                return;
+            }
+            int[] at = xz;
+            int tried = number;
+            world.getChunkAtAsync(at[0] >> 4, at[1] >> 4, true).whenComplete((chunk, error) -> onMainThread(() -> {
+                try {
+                    if (error == null && chunk != null) {
+                        Optional<Location> spot = check(settings, at[0], at[1]);
+                        if (spot.isPresent()) {
+                            result.complete(Optional.of(new Found(spot.get(), tried)));
+                            return;
+                        }
+                    }
+                    attempt(settings, tried + 1, max, result);
+                } catch (RuntimeException problem) {
+                    fail(result, problem);
+                }
+            }));
+        } catch (RuntimeException problem) {
+            fail(result, problem);
+        }
+    }
+
+    /** A search that breaks must still end, or the player would stay "already teleporting". */
+    private void fail(CompletableFuture<Optional<Found>> result, RuntimeException problem) {
+        plugin.getLogger().warning("A search for a safe spot failed: " + problem);
+        result.complete(Optional.empty());
     }
 
     private void onMainThread(Runnable task) {
@@ -111,6 +127,7 @@ public final class LocationFinder {
     public boolean stillSafe(Settings settings, Location spot) {
         World world = spot.getWorld();
         if (world == null || !world.isChunkLoaded(spot.getBlockX() >> 4, spot.getBlockZ() >> 4)) return false;
+        if (!world.getWorldBorder().isInside(spot)) return false;
         if (!isSafeSpot(world, spot.getBlockX(), spot.getBlockY(), spot.getBlockZ())) return false;
         return !(plugin.roamConfig().avoidClaims() && plugin.hooks().isClaimed(spot));
     }
