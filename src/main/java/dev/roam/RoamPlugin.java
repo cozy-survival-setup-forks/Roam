@@ -64,6 +64,7 @@ public class RoamPlugin extends JavaPlugin {
 
         // Cooldowns are written to disk a little after they change.
         Bukkit.getScheduler().runTaskTimerAsynchronously(this, cooldowns::saveIfNeeded, 600L, 600L);
+        Banner.print(this, "Thanks for sending every player somewhere new.");
     }
 
     @Override
