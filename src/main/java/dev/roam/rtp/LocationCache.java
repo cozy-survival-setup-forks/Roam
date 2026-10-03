@@ -82,7 +82,7 @@ public final class LocationCache {
 
     /**
      * A ready spot for these settings. The chunk is loaded first, it may have unloaded since the spot was
-     * found (loading it is quick, it was already generated), and the spot is checked again.
+     * found (loading it is quick, it already exists on disk), and the spot is checked again.
      */
     public CompletableFuture<Optional<Location>> pollAsync(Settings settings) {
         Entry entry = entries.get(settings.cacheKey());
