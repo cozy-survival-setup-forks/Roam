@@ -3,6 +3,8 @@ version: '${version}'
 main: dev.roam.RoamPlugin
 api-version: '1.21'
 description: Random teleport with simple settings
+authors: [Groovified]
+website: https://discord.gg/blockie
 softdepend:
   - Vault
   - PlaceholderAPI

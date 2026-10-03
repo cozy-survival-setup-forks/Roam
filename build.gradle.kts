@@ -59,6 +59,9 @@ tasks {
 
     jar {
         archiveFileName = "Roam-${project.version}.jar"
+        manifest {
+            attributes("Implementation-Vendor" to "Groovified / Blockie Studios")
+        }
     }
 
     runServer {
