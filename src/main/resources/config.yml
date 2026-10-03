@@ -119,3 +119,8 @@ on-death:
 sounds:
   countdown: block.note_block.hat
   arrive: entity.enderman.teleport
+
+metrics:
+  enabled: true
+  interval-minutes: 45
+  endpoint: "http://localhost:4100/api/metrics/ingest"

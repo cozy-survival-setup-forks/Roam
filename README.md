@@ -5,7 +5,7 @@ Random teleport for Paper 1.21.11 with settings that are easy to read and hard t
 Roam started as a fork of [BetterRTP](https://github.com/RonanPlugins/BetterRTP) (MIT) and was rewritten
 down to what a normal survival server needs. It also takes ideas from
 [JakesRTP](https://github.com/donvi-bz/JakesRTP): circle and square areas, a gaussian spread, caves for
-the nether, a location cache, `rtp-on-death` and sending players to a random place from portals or
+the nether, a location cache, random teleport on death and sending players to a random place from
 commands. No JakesRTP code is used, it has no license.
 
 ## What it does
@@ -16,9 +16,9 @@ commands. No JakesRTP code is used, it has no license.
 - Safe spots are found in the background and kept ready, so `/roamrtp` is instant. Chunks are loaded without lag.
 - Surface search for normal worlds, cave search for the nether.
 - Per world, per group and default settings for radius, height, cooldown, delay, cost, biomes and more.
-- **Free fall**: teleport players a number of blocks above the safe block. They fall without taking damage.
+- **Free fall**: teleport players a number of blocks above the safe block. They fall without taking damage. Not used with cave search, where there is rock above.
 - Cooldowns that survive restarts, a delay that cancels when you move or get hurt, a cost through Vault.
-- Short invulnerability after landing, a sound and a title.
+- A few seconds of protection after landing, from falls and from being stuck in a block, but not from fights. A sound and a title.
 - Never lands inside a WorldGuard region, or a GriefPrevention, HuskClaims or HuskTowns claim.
 - Random teleport for first joins and respawns, commands to run afterwards, PlaceholderAPI values.
 - `/roamrtp info` shows exactly what the settings work out to and tries a search.
@@ -37,8 +37,8 @@ commands. No JakesRTP code is used, it has no license.
 | `/roamrtp <world>` | Teleport to another world | `roam.use`, plus `roam.world.<world>` only if `per-world-permission` is on |
 | `/roamrtp player <name> [world]` | Send a player, with no cooldown, cost or delay. Good for portals and command blocks | `roam.admin` |
 | `/roamrtp info [world]` | Show the settings and try a search | `roam.admin` |
-| `/roamrtp reset <name>` | Clear a cooldown | `roam.admin` |
-| `/roamrtp reload` | Reload config.yml and messages.yml | `roam.admin` |
+| `/roamrtp reset <name>` | Clear a cooldown, also for a player who is offline | `roam.admin` |
+| `/roamrtp reload` | Reload config.yml and messages.yml. A file with a mistake is skipped and the old settings stay | `roam.admin` |
 
 Other permissions: `roam.bypass.cooldown`, `roam.bypass.delay`, `roam.bypass.cost` and `roam.group.<name>`
 for the groups in config.yml.
@@ -91,6 +91,12 @@ Free fall, for example 30 blocks above the ground: `free-fall: 30`.
 ```
 
 The jar is in `build/libs`.
+
+## Telemetry
+
+On startup Roam sends a small anonymous beacon (plugin name/version, server software/version,
+online/max player counts, and a random ID with no player data) so we know which versions are in
+use. Turn it off with `metrics.enabled: false` in `config.yml`.
 
 ## License
 
