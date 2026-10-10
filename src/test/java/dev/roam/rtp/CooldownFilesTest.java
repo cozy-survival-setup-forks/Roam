@@ -40,6 +40,23 @@ class CooldownFilesTest {
     }
 
     @Test
+    void aDamagedFileComesBackFromItsBackup() throws Exception {
+        CooldownStore store = store();
+        UUID player = UUID.randomUUID();
+        store.mark(player, "world", false);
+        store.saveIfNeeded();
+        store.mark(UUID.randomUUID(), "world", false); // a second save makes the first one the backup
+        store.saveIfNeeded();
+        assertTrue(new File(dir, "cooldowns.yml.bak").exists());
+
+        Files.writeString(new File(dir, "cooldowns.yml").toPath(), "a: [unclosed\n");
+        CooldownStore again = store();
+        again.load();
+        assertTrue(again.remainingMillis(player, "world", false, 3600, System.currentTimeMillis()) > 0);
+        assertEquals(1, files("cooldowns.yml.broken-"));
+    }
+
+    @Test
     void aLongCooldownSurvivesARestart() {
         CooldownStore store = store();
         store.keepFor(30L * 24 * 60 * 60);

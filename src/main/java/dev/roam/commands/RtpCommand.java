@@ -44,6 +44,17 @@ public final class RtpCommand implements CommandExecutor, TabCompleter {
                     messages.send(sender, plugin.reloadAll() ? "reloaded" : "reload-failed");
                     return true;
                 }
+                case "doctor" -> {
+                    if (!admin(sender)) return true;
+                    plugin.doctor().forEach(sender::sendPlainMessage);
+                    return true;
+                }
+                case "backup" -> {
+                    if (!admin(sender)) return true;
+                    if (args.length < 2 || !args[1].equalsIgnoreCase("now")) sender.sendPlainMessage("Use /roamrtp backup now");
+                    else sender.sendPlainMessage(plugin.backupNow() ? "Backup made and checked." : "The backup FAILED, see the console.");
+                    return true;
+                }
                 case "player" -> {
                     if (!admin(sender)) return true;
                     return teleportOther(sender, args);
@@ -159,7 +170,7 @@ public final class RtpCommand implements CommandExecutor, TabCompleter {
         boolean admin = sender.hasPermission("roam.admin");
 
         if (args.length == 1) {
-            if (admin) options.addAll(List.of("player", "info", "reset", "reload"));
+            if (admin) options.addAll(List.of("player", "info", "reset", "reload", "doctor", "backup"));
             options.addAll(worlds(sender));
         } else if (args.length == 2 && admin) {
             switch (args[0].toLowerCase(Locale.ROOT)) {

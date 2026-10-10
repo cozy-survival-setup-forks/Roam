@@ -1,3 +1,4 @@
+lang-version: 1
 # Messages use MiniMessage (<red>text</red>) and also old codes like &7 and &#ff8800.
 # <placeholders> are filled in. Leave a message empty to turn it off.
 

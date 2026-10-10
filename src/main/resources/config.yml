@@ -1,3 +1,4 @@
+config-version: 1
 # Roam - random teleport
 #
 # The rules are simple:
@@ -122,4 +123,3 @@ sounds:
 
 metrics:
   enabled: true
-  interval-minutes: 45

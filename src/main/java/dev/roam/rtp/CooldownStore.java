@@ -1,13 +1,12 @@
 package dev.roam.rtp;
 
 import dev.roam.RoamPlugin;
-import org.bukkit.configuration.InvalidConfigurationException;
+import dev.roam.safe.Health;
+import dev.roam.safe.SafeIo;
 import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -47,17 +46,10 @@ public final class CooldownStore {
     public void load() {
         lastUse.clear();
         if (!file.exists()) return;
-        YamlConfiguration yaml = new YamlConfiguration();
-        try {
-            yaml.load(file);
-        } catch (IOException | InvalidConfigurationException e) {
-            // reading it as empty would make the next save replace every cooldown with nothing
-            File aside = new File(file.getParentFile(), file.getName() + ".broken-" + System.currentTimeMillis() / 1000);
-            if (!file.renameTo(aside)) logger.severe("cooldowns.yml is broken and could not be moved aside.");
-            logger.severe("cooldowns.yml could not be read (" + e.getMessage() + "). It was kept as " + aside.getName()
-                    + " and everyone starts without a cooldown.");
-            return;
-        }
+        // a damaged file is restored from its .bak; with none, it is kept as .broken-<time> and everyone starts without a
+        // cooldown (a cooldown that is lost only lets a player teleport a little earlier)
+        YamlConfiguration yaml = SafeIo.loadYaml(file.toPath(), SafeIo.Policy.SETTINGS, logger).yaml;
+        SafeIo.refreshBackup(file.toPath());
         for (String id : yaml.getKeys(false)) {
             try {
                 UUID uuid = UUID.fromString(id);
@@ -95,6 +87,16 @@ public final class CooldownStore {
         dirty = true;
     }
 
+    /** How many players have a cooldown entry. */
+    public int tracked() {
+        return lastUse.size();
+    }
+
+    /** Whether there is something that is not on disk yet. */
+    public boolean pending() {
+        return dirty;
+    }
+
     public void clear(UUID player) {
         lastUse.remove(player);
         dirty = true;
@@ -114,14 +116,11 @@ public final class CooldownStore {
             }
         }
         try {
-            File parent = file.getParentFile();
-            if (parent != null) parent.mkdirs();
-            // through a temporary file, so a crash never leaves half a file behind
-            File temp = new File(file.getPath() + ".tmp");
-            yaml.save(temp);
-            Files.move(temp.toPath(), file.toPath(), StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+            // through a temporary file that is flushed to disk, with the previous version kept as cooldowns.yml.bak
+            SafeIo.writeYaml(file.toPath(), yaml.saveToString());
         } catch (IOException ex) {
             logger.log(Level.WARNING, "Could not save cooldowns.yml", ex);
+            Health.failure("cooldowns.yml could not be saved: " + ex.getMessage());
             dirty = true;
         }
     }
