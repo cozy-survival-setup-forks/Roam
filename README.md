@@ -97,6 +97,7 @@ The jar is in `build/libs`.
 - `config.yml` and `messages.yml` start with a `config-version` / `lang-version` number. After an update, new settings are added to your files with their comments, and nothing you changed is touched. The old file is kept next to it as `<name>.<date>.bak` (the newest 5). A setting is only removed when the changelog says so.
 - A value with a mistake (a negative time, an item that does not exist, text where a number belongs) is named in the console by file and key. On a reload, the settings in use stay as they were.
 - Files are written to a temporary file and moved into place, with the previous version kept as `.bak`. A file that cannot be read is restored from its `.bak`, and the unreadable one is kept as `.broken-<time>`.
+- `cooldowns.yml` (when each player last teleported) is written the same way. If it is damaged it is restored from `cooldowns.yml.bak`; with no usable backup it is kept as `cooldowns.yml.broken-<time>` and everyone starts without a cooldown.
 - A file or database that was made by a newer version of the plugin is left alone and a warning is logged.
 - `/roamrtp doctor` shows the health of the files, versions, last backup and recent save failures (no player data). `/roamrtp backup now` makes a checked backup right away. Both need the admin permission.
 
